@@ -1,5 +1,6 @@
 package com.example.PokemonApi.service;
 
+import com.example.PokemonApi.exceptions.ResourceNotFoundException;
 import com.example.PokemonApi.model.Pokemon;
 import com.example.PokemonApi.repository.PokemonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,65 +13,80 @@ import java.util.List;
 @Service
 public class PokemonService {
 
-	@Autowired
-	private PokemonRepository pokemonRepository;
+	private final PokemonRepository pokemonRepository;
 
+	@Autowired
+	public PokemonService(PokemonRepository pokemonRepository) {
+		this.pokemonRepository = pokemonRepository;
+	}
+
+
+	// Obtener todos los Pokémon
 	public List<Pokemon> obtenerTodos() {
 		return pokemonRepository.findAll();
 	}
 
+	// Obtener Pokémon por ID
 	public Pokemon obtenerPorId(Long id) {
-		return pokemonRepository.findById(id)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No existe el Pokémon " + id));
+		return pokemonRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No se encontró el pokemon"));
 	}
 
-	public Pokemon crear(Pokemon pokemon) {
-		pokemon.setId(null);
+	// Crear un Pokémon
+	public Pokemon crearPokemon(Pokemon pokemon) {
 		return pokemonRepository.save(pokemon);
 	}
 
-	public Pokemon actualizar(Long id, Pokemon nuevo) {
-		Pokemon existente = obtenerPorId(id);
-		existente.setNombre(nuevo.getNombre());
-		existente.setTipo(nuevo.getTipo());
-		existente.setNivel(nuevo.getNivel());
-		existente.setAtaque(nuevo.getAtaque());
-		existente.setDefensa(nuevo.getDefensa());
-		existente.setDescripcion(nuevo.getDescripcion());
-		existente.setImagenUrl(nuevo.getImagenUrl());
-		return pokemonRepository.save(existente);
+	// Actualizar completamente (PUT)
+	public Pokemon actualizarPokemonCompleto(
+			Long id, Pokemon pokemonActualizado) {
+
+		return pokemonRepository.findById(id).map(pokemon -> {
+			pokemon.setNombre(pokemonActualizado.getNombre());
+			pokemon.setTipo(pokemonActualizado.getTipo());
+			pokemon.setNivel(pokemonActualizado.getNivel());
+			pokemon.setAtaque(pokemonActualizado.getAtaque());
+			pokemon.setDefensa(pokemonActualizado.getDefensa());
+			pokemon.setDescripcion(pokemonActualizado.getDescripcion());
+			pokemon.setImagenUrl(pokemonActualizado.getImagenUrl());
+
+			return pokemonRepository.save(pokemon);
+		}).orElseThrow(() -> new ResourceNotFoundException("No se pudo actualizar el pokemon"));
 	}
 
-	public Pokemon actualizarParcial(Long id, Pokemon cambios) {
-		Pokemon existente = obtenerPorId(id);
+	// Actualizar parcialmente (PATCH)
+	public Pokemon actualizarPokemonParcial(
+			Long id, Pokemon pokemonParcial) {
 
-		if (cambios.getNombre() != null) {
-			existente.setNombre(cambios.getNombre());
-		}
-		if (cambios.getTipo() != null) {
-			existente.setTipo(cambios.getTipo());
-		}
-		if (cambios.getNivel() != null) {
-			existente.setNivel(cambios.getNivel());
-		}
-		if (cambios.getAtaque() != null) {
-			existente.setAtaque(cambios.getAtaque());
-		}
-		if (cambios.getDefensa() != null) {
-			existente.setDefensa(cambios.getDefensa());
-		}
-		if (cambios.getDescripcion() != null) {
-			existente.setDescripcion(cambios.getDescripcion());
-		}
-		if (cambios.getImagenUrl() != null) {
-			existente.setImagenUrl(cambios.getImagenUrl());
-		}
-		return pokemonRepository.save(existente);
+		return pokemonRepository.findById(id).map(pokemon -> {
+
+			if (pokemonParcial.getNombre() != null)
+				pokemon.setNombre(pokemonParcial.getNombre());
+
+			if (pokemonParcial.getTipo() != null)
+				pokemon.setTipo(pokemonParcial.getTipo());
+
+			if (pokemonParcial.getNivel() != null)
+				pokemon.setNivel(pokemonParcial.getNivel());
+
+			if (pokemonParcial.getAtaque() != null)
+				pokemon.setAtaque(pokemonParcial.getAtaque());
+
+			if (pokemonParcial.getDefensa() != null)
+				pokemon.setDefensa(pokemonParcial.getDefensa());
+
+			if (pokemonParcial.getDescripcion() != null)
+				pokemon.setDescripcion(pokemonParcial.getDescripcion());
+
+			if (pokemonParcial.getImagenUrl() != null)
+				pokemon.setImagenUrl(pokemonParcial.getImagenUrl());
+
+			return pokemonRepository.save(pokemon);
+		}).orElseThrow(() -> new ResourceNotFoundException("No se pudo actualizar el pokemon"));
 	}
 
-	public void eliminar(Long id) {
-		Pokemon existente = obtenerPorId(id);
-		pokemonRepository.delete(existente);
+	// Eliminar un Pokémon
+	public void eliminarPokemon(Long id) {
+		pokemonRepository.deleteById(id);
 	}
 
 }
